@@ -137,11 +137,10 @@ async function setupKeplr(
     },
     msgs: [
       {
-        type: "query_balance_permit",
+        type: "query_permit",
         value: {
-          permit_user_id: "secretswap.io",
-          query_balance_of: myAddress,
-          message: "This signature is a permit to query my balance.",
+          permit_name: "secretswap.io",
+          allowed_tokens: ["secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg"],
         },
       },
     ],
@@ -151,7 +150,7 @@ async function setupKeplr(
   setOutput("Loading balance with permit...");
 
   const result = await secretjs.queryContractSmart("secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg", {
-    balance_with_permit: permit,
+    with_permit: { permit, query: { balance: {} } },
   });
 
   setOutput(JSON.stringify(result, null, 4));
