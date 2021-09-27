@@ -56,6 +56,34 @@ export function KeplrPanel({
 
 export const chainId = "enigma-pub-testnet-3";
 
+interface PermitParams {
+  chain_id: string,
+  permit_name: string,
+  allowed_tokens: Array<string>,
+}
+
+function makePermitMessage(params: PermitParams) {
+  return {
+    chain_id: params.chain_id,
+    account_number: "0",
+    sequence: "0",
+    fee: {
+      amount: [{ denom: "uscrt", amount: "0" }],
+      gas: "1",
+    },
+    msgs: [
+      {
+        type: "query_permit",
+        value: {
+          permit_name: params.permit_name,
+          allowed_tokens: params.allowed_tokens,
+        },
+      },
+    ],
+    memo: "",
+  }
+}
+
 async function setupKeplr(
   setSecretjs: React.Dispatch<React.SetStateAction<SigningCosmWasmClient | null>>,
   setMyAddress: React.Dispatch<React.SetStateAction<SecretAddress | null>>,
@@ -127,25 +155,17 @@ async function setupKeplr(
     BroadcastMode.Sync
   );
 
-  const permit = await window.keplr.signAmino(chainId, myAddress, {
+  const permitParams = {
     chain_id: chainId,
-    account_number: "0",
-    sequence: "0",
-    fee: {
-      amount: [{ denom: "uscrt", amount: "0" }],
-      gas: "1",
-    },
-    msgs: [
-      {
-        type: "query_permit",
-        value: {
-          permit_name: "secretswap.io",
-          allowed_tokens: ["secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg"],
-        },
-      },
-    ],
-    memo: "",
-  });
+    permit_name: "secretswap.io",
+    allowed_tokens: ["secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg"],
+  };
+
+  const permitMessage = makePermitMessage(permitParams);
+  const permit = await window.keplr.signAmino(chainId, myAddress, permitMessage);
+  
+  // after setting `permit.signed` to the params, save the resulting object in local storage
+  permit.signed = permitParams;
 
   setOutput("Loading balance with permit...");
 
