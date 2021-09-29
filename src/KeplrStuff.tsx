@@ -127,30 +127,53 @@ async function setupKeplr(
     BroadcastMode.Sync
   );
 
-  const permit = await window.keplr.signAmino(chainId, myAddress, {
-    chain_id: chainId,
-    account_number: "0",
-    sequence: "0",
-    fee: {
-      amount: [{ denom: "uscrt", amount: "0" }],
-      gas: "1",
-    },
-    msgs: [
-      {
-        type: "query_permit",
-        value: {
-          permit_name: "secretswap.io",
-          allowed_tokens: ["secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg"],
-        },
+  const permitName = "secretswap.io";
+  const allowedTokens = ["secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg"];
+  const permissions = ["balance" /* , "history", "allowance" */];
+
+  const { signature } = await window.keplr.signAmino(
+    chainId,
+    myAddress,
+    {
+      chain_id: chainId,
+      account_number: "0",
+      sequence: "0",
+      fee: {
+        amount: [{ denom: "uscrt", amount: "0" }],
+        gas: "1",
       },
-    ],
-    memo: "",
-  });
+      msgs: [
+        {
+          type: "query_permit",
+          value: {
+            permit_name: permitName,
+            allowed_tokens: allowedTokens,
+            permissions: permissions,
+          },
+        },
+      ],
+      memo: "",
+    },
+    {
+      preferNoSetFee: true,
+      preferNoSetMemo: true,
+    }
+  );
 
   setOutput("Loading balance with permit...");
 
   const result = await secretjs.queryContractSmart("secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg", {
-    with_permit: { permit, query: { balance: {} } },
+    with_permit: {
+      query: { balance: {} },
+      permit: {
+        params: {
+          permit_name: permitName,
+          allowed_tokens: allowedTokens,
+          chain_id: chainId,
+        },
+        signature: signature,
+      },
+    },
   });
 
   setOutput(JSON.stringify(result, null, 4));
